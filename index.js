@@ -9,25 +9,12 @@ const port = 3000;
 // For Body parser to access the data in Json
 app.use(bodyParser.json());
 
-// To Load or initialize data. Also prevents crashing if >> data.json << is empty or corrupted
+// To use in memory data instead of DB or file system (fs)... better railway performance
 let data = [];
-
-if (fs.existsSync("data.json")) {
-  try {
-    const file = fs.readFileSync("data.json", "utf8").trim();
-    data = file ? JSON.parse(file) : [];
-  } catch {
-    console.warn("data.json is invalid ... resetting it.");
-    data = [];
-    fs.writeFileSync("data.json", "[]");
-  }
-} else {
-  fs.writeFileSync("data.json", "[]");
-};
 
 // To help save the data
 function saveData() {
-    fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
+    console.log("✅ Data updated:", data.length, "items");
 };
 
 // Function to carry out analysis on string
@@ -141,9 +128,6 @@ app.delete("/strings/:string_value", (req, res) => {
   saveData();
   res.status(204).send();
 });
-
-
-
 
 
 
