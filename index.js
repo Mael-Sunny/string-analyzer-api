@@ -1,7 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
 import crypto from "crypto";
-import cors from "cors";
 
 const app = express();
 // Use the environment port (Railway) or fallback to 3000 locally
@@ -9,7 +8,6 @@ const port = process.env.PORT || 3000;
 
 // Middlewares
 app.use(bodyParser.json());
-app.use(cors()); // small addition to avoid CORS issues when testing
 
 // In-memory store (works reliably on Railway)
 let data = [];
