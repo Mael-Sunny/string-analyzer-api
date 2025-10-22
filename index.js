@@ -1,22 +1,25 @@
-import express from "express"
-import bodyParser from "body-parser"
-import crypto from "crypto"
+import express from "express";
+import bodyParser from "body-parser";
+import crypto from "crypto";
+import cors from "cors";
 
 const app = express();
-const port = 3000;
+// Use the environment port (Railway) or fallback to 3000 locally
+const port = process.env.PORT || 3000;
 
-// For Body parser to access the data in Json
+// Middlewares
 app.use(bodyParser.json());
+app.use(cors()); // small addition to avoid CORS issues when testing
 
-// To use in memory data instead of DB or file system (fs)... better railway performance
+// In-memory store (works reliably on Railway)
 let data = [];
 
-// To help save the data
+// saveData is only a logger here (we're intentionally not using fs)
 function saveData() {
-    console.log("✅ Data updated:", data.length, "items");
-};
+  console.log("✅ Data updated:", data.length, "items");
+}
 
-// Function to carry out analysis on string
+// Analyze function (consistent field names)
 function analyzeString(str) {
   const length = str.length;
   const isPalindrome = str === str.split("").reverse().join("");
@@ -28,37 +31,56 @@ function analyzeString(str) {
   const sha256 = crypto.createHash("sha256").update(str).digest("hex");
 
   return { value: str, length, isPalindrome, wordCount, uniqueChars, frequency, sha256 };
-};
+}
 
-// POST Endpoint for sending and analyzing string
+// POST /strings
 app.post("/strings", (req, res) => {
-  const { value } = req.body;
+  // Defensive: ensure body is parsed
+  if (!req.body) {
+    console.log("⚠️ No body received");
+    return res.status(400).json({ error: "Missing body" });
+  }
 
-  if (!value) return res.status(400).json({ error: "Missing value" });
-  if (typeof value !== "string") return res.status(422).json({ error: "Not a string" });
+  const raw = req.body.value;
+  const value = typeof raw === "string" ? raw : raw === undefined ? undefined : String(raw);
+  console.log("📦 Received POST body:", req.body);
 
-  if (data.find((item) => item.value === value))
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return res.status(400).json({ error: "Missing value" });
+  }
+
+  if (typeof value !== "string") {
+    return res.status(422).json({ error: "Not a string" });
+  }
+
+  // Duplicate check
+  if (data.find((item) => item.value === value)) {
     return res.status(409).json({ error: "Already exists" });
+  }
 
+  // Analyze
   const analysis = analyzeString(value);
+  console.log("🔍 Analysis result:", analysis);
+
+  // Save in-memory
   data.push(analysis);
   saveData();
+  console.log("📊 Current data array after push:", data);
 
+  // Return the single analyzed object (201)
   res.status(201).json(analysis);
 });
 
-//GET Endpoint for Filtering by natural Language 
-// >>>> Reordered to prevent getting "404 error: string not found"
+// Natural language filter – keep before param route
 app.get("/strings/filter-by-natural-language", (req, res) => {
-  const { query } = req;
-  const input = query.q?.toLowerCase();
+  const input = (req.query.q || "").toLowerCase().trim();
 
   if (!input) return res.status(400).json({ error: "Missing query text" });
 
   let results = data;
 
   try {
-    if (input.includes("palindromic")) {
+    if (input.includes("palindromic") || input.includes("palindrome")) {
       results = results.filter((item) => item.isPalindrome);
     }
 
@@ -68,17 +90,17 @@ app.get("/strings/filter-by-natural-language", (req, res) => {
 
     const match = input.match(/longer than (\d+)/);
     if (match) {
-      const len = parseInt(match[1]);
+      const len = parseInt(match[1], 10);
       results = results.filter((item) => item.length > len);
     }
 
-    res.json(results);
+    return res.json(results);
   } catch (err) {
-    res.status(422).json({ error: "Could not process query" });
+    return res.status(422).json({ error: "Could not process query" });
   }
 });
 
-// GET endpoint for a string_value
+// GET single string by value
 app.get("/strings/:string_value", (req, res) => {
   const str = decodeURIComponent(req.params.string_value);
   const found = data.find((item) => item.value === str);
@@ -88,7 +110,7 @@ app.get("/strings/:string_value", (req, res) => {
   res.json(found);
 });
 
-//GET Endpoint where filters can be utilized
+// GET all / filters
 app.get("/strings", (req, res) => {
   try {
     let results = data;
@@ -99,7 +121,7 @@ app.get("/strings", (req, res) => {
     }
 
     if (req.query.min_length) {
-      const len = parseInt(req.query.min_length);
+      const len = parseInt(req.query.min_length, 10);
       if (isNaN(len)) return res.status(400).json({ error: "Bad query: min_length must be a number" });
       results = results.filter((item) => item.length >= len);
     }
@@ -115,8 +137,7 @@ app.get("/strings", (req, res) => {
   }
 });
 
-
-//DELETE Request for a string
+// DELETE /strings/:string_value
 app.delete("/strings/:string_value", (req, res) => {
   const str = decodeURIComponent(req.params.string_value);
   const index = data.findIndex((item) => item.value === str);
@@ -125,11 +146,11 @@ app.delete("/strings/:string_value", (req, res) => {
 
   data.splice(index, 1);
   saveData();
+  console.log("📊 Current data array after delete:", data);
   res.status(204).send();
 });
 
-
-
+// Start server on correct port
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
