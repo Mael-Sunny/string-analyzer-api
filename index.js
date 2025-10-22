@@ -1,7 +1,6 @@
 import express from "express"
 import bodyParser from "body-parser"
 import crypto from "crypto"
-import fs from "fs"
 
 const app = express();
 const port = 3000;
@@ -19,16 +18,16 @@ function saveData() {
 
 // Function to carry out analysis on string
 function analyzeString(str) {
-    const length = str.length;
-    const isPalindrome = str === str.split("").reverse().join("");
-    const words = str.trim().split(/\s+/).filter(Boolean);
-    const wordCount = words.length;
-    const uniqueChars = new Set(str).size;
-    const freq = {};
-    for (const c of str) freq[c] = (freq[c] || 0) + 1;
-    const hash = crypto.createHash("sha256").update(str).digest("hex");
+  const length = str.length;
+  const isPalindrome = str === str.split("").reverse().join("");
+  const words = str.trim().split(/\s+/).filter(Boolean);
+  const wordCount = words.length;
+  const uniqueChars = new Set(str).size;
+  const frequency = {};
+  for (const c of str) frequency[c] = (frequency[c] || 0) + 1;
+  const sha256 = crypto.createHash("sha256").update(str).digest("hex");
 
-    return { value: str, length, isPalindrome, wordCount, uniqueChars, freq, hash };
+  return { value: str, length, isPalindrome, wordCount, uniqueChars, frequency, sha256 };
 };
 
 // POST Endpoint for sending and analyzing string
