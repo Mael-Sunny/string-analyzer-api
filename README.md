@@ -126,7 +126,7 @@ Response:
 -- Express.js
 -- Crypto (for SHA256 hashing)
 
-FS module (for local JSON storage)
+------- Unlike the (file system) used as DB on the main. This branch uses Postgre as its database. Railway could write the FS (data.json)-----
 
 🏁 Author
 Sunday Igboke

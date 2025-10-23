@@ -9,3 +9,7 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+
+# Temporal DB used
+data.json
