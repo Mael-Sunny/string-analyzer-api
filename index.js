@@ -8,7 +8,14 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Set up PostgreSQL connection pool
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const localDbUrl = process.env.DATABASE_PUBLIC_URL; // use Railway's public URL for local dev
+const prodDbUrl = process.env.DATABASE_URL; // internal Railway URL for deployed app
+
+const pool = new Pool({
+  connectionString: process.env.NODE_ENV === "production" ? prodDbUrl : localDbUrl,
+  ssl: { rejectUnauthorized: false },
+});
+
 
 // String analysis logic (unchanged)
 function analyzeString(str) {
