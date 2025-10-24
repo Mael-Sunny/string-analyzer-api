@@ -13,3 +13,5 @@ Thumbs.db
 
 # Temporal DB used
 data.json
+.env
+
