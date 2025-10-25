@@ -178,34 +178,6 @@ app.get("/strings/filter-by-natural-language", async (req, res) => {
   }
 });
 
-
-// ----------------------------
-// GET /strings/:string_value
-// ----------------------------
-app.get("/strings/:string_value", async (req, res) => {
-  const str = decodeURIComponent(req.params.string_value);
-  try {
-    const { rows } = await pool.query("SELECT * FROM strings WHERE value = $1", [str]);
-    if (rows.length === 0) return res.status(404).json({ error: "String not found" });
-    const row = rows[0];
-    res.json({
-      id: row.id,
-      value: row.value,
-      properties: {
-        length: row.length,
-        is_palindrome: row.is_palindrome,
-        unique_characters: row.unique_characters,
-        word_count: row.word_count,
-        sha256_hash: row.sha256_hash,
-        character_frequency_map: row.character_frequency_map,
-      },
-      created_at: row.created_at,
-    });
-  } catch {
-    res.status(500).json({ error: "Database error" });
-  }
-});
-
 // ----------------------------
 // GET /strings (with filters)
 // ----------------------------
@@ -273,6 +245,33 @@ app.get("/strings", async (req, res) => {
   }
 });
 
+
+// ----------------------------
+// GET /strings/:string_value
+// ----------------------------
+app.get("/strings/:string_value", async (req, res) => {
+  const str = decodeURIComponent(req.params.string_value);
+  try {
+    const { rows } = await pool.query("SELECT * FROM strings WHERE value = $1", [str]);
+    if (rows.length === 0) return res.status(404).json({ error: "String not found" });
+    const row = rows[0];
+    res.json({
+      id: row.id,
+      value: row.value,
+      properties: {
+        length: row.length,
+        is_palindrome: row.is_palindrome,
+        unique_characters: row.unique_characters,
+        word_count: row.word_count,
+        sha256_hash: row.sha256_hash,
+        character_frequency_map: row.character_frequency_map,
+      },
+      created_at: row.created_at,
+    });
+  } catch {
+    res.status(500).json({ error: "Database error" });
+  }
+});
 
 // -------------------------------
 // DELETE /strings/:string_value
